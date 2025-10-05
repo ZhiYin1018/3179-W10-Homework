@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Marriage Rate in Malaysia (Interactive)</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #cfeefb;
+      font-family: Arial, sans-serif;
+    }
+    h2 {
+      text-align: center;
+      margin: 10px 0;
+      color: #000;
+    }
+    #controls {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #vis {
+      width: 100%;
+      height: 85vh;
+    }
+    select, input[type=range] {
+      font-size: 15px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid #aaa;
+      margin: 0 10px;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="chartTitle">Female vs Male Marriage Rate in Malaysia, 2022 (All Ages)</h2>
+
+  <div id="controls">
+    <label for="sexSelect">Gender:</label>
+    <select id="sexSelect">
+      <option value="female" selected>Female</option>
+      <option value="male">Male</option>
+    </select>
+
+    <label for="yearSlider">Year:</label>
+    <input type="range" id="yearSlider" min="2017" max="2022" value="2022" step="1" />
+    <span id="yearLabel">2022</span>
+  </div>
+
+  <div id="vis"></div>
+
+  <script type="text/javascript">
+    const drawChart = (selectedSex, selectedYear) => {
+      // update title
+      document.getElementById("chartTitle").textContent =
+        `${selectedSex.charAt(0).toUpperCase() + selectedSex.slice(1)} Marriage Rate in Malaysia, ${selectedYear} (All Ages)`;
+
+      // pink for female, blue for male
+      const colorRange = selectedSex === "female"
+        ? ["#fde0dd", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"] // pink tones
+        : ["#deebf7", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#084594"]; // blue tones
+
+      const spec = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "description": "Marriage Rate in Malaysia (by Gender & Year)",
+        "width": "container",
+        "height": "container",
+        "background": "#cfeefb",
+        "projection": {
+          "type": "conicEqualArea",
+          "center": [108, 4],
+          "parallels": [1, 7],
+          "scale": 4500
+        },
+        "layer": [
+          {
+            "data": {"sphere": true},
+            "mark": {"type": "geoshape", "fill": "#cfeefb"}
+          },
+          {
+            "data": {
+              "url": "https://raw.githubusercontent.com/ZhiYin1018/3179/refs/heads/main/data/marriages_state_age.csv",
+              "format": {"type": "csv"}
+            },
+            "transform": [
+              {"filter": `datum.year == ${selectedYear} && datum.sex == '${selectedSex}' && datum.age == 'all'`},
+              {
+                "lookup": "state",
+                "from": {
+                  "data": {
+                    "url": "https://raw.githubusercontent.com/ZhiYin1018/3179/refs/heads/main/data/malaysia-states.topojson",
+                    "format": {"type": "topojson", "feature": "gadm41_MYS_1"}
+                  },
+                  "key": "properties.NAME_1"
+                },
+                "as": "geo"
+              },
+              {"filter": "datum.geo != null"}
+            ],
+            "mark": {"type": "geoshape", "stroke": "#fff", "strokeWidth": 0.6},
+            "encoding": {
+              "shape": {"field": "geo", "type": "geojson"},
+              "color": {
+                "field": "rate",
+                "type": "quantitative",
+                "scale": {
+                  "type": "threshold",
+                  "domain": [18, 22, 25, 28, 32],
+                  "range": colorRange
+                },
+                "legend": {
+                  "title": "Marriage Rate (per 1000)",
+                  "titleFont": "Arial",
+                  "labelFont": "Arial",
+                  "orient": "top-right",
+                  "direction": "horizontal",
+                  "symbolType": "square",
+                  "padding": 8
+                }
+              },
+              "tooltip": [
+                {"field": "state", "type": "nominal", "title": "State"},
+                {"field": "rate", "type": "quantitative", "title": `${selectedSex.charAt(0).toUpperCase() + selectedSex.slice(1)} Marriage Rate`, "format": ".1f"},
+                {"field": "year", "type": "ordinal", "title": "Year"}
+              ]
+            }
+          }
+        ],
+        "config": {
+          "style": {"tooltip": {"font": "Arial", "fontSize": 13}}
+        }
+      };
+
+      vegaEmbed('#vis', spec, {renderer: "svg", actions: false}).catch(console.error);
+    };
+
+    // Initial chart
+    let selectedSex = "female";
+    let selectedYear = 2022;
+    drawChart(selectedSex, selectedYear);
+
+    // Dropdown listener
+    document.getElementById("sexSelect").addEventListener("change", (e) => {
+      selectedSex = e.target.value;
+      drawChart(selectedSex, selectedYear);
+    });
+
+    // Year slider listener
+    document.getElementById("yearSlider").addEventListener("input", (e) => {
+      selectedYear = e.target.value;
+      document.getElementById("yearLabel").textContent = selectedYear;
+      drawChart(selectedSex, selectedYear);
+    });
+  </script>
+</body>
+</html>
