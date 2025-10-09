@@ -6,6 +6,8 @@
   <script src="https://cdn.jsdelivr.net/npm/vega@6"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+  
+  
   <style>
     body, html {
       margin: 0;
@@ -78,6 +80,7 @@
       padding: 15px;
       background: transparent;
     }
+
   </style>
 </head>
 <body>
@@ -197,19 +200,19 @@
           {
             "data": {
               "values": [
-                { "year": 2017, "text": "Kelantan’s women marry earlier—traditions keep rates above 30‰.", "lon": 104.0, "lat": 6.3 },
+                { "year": 2017, "text": "Kelantan’s women marry earlier because of traditions, hence the rates is above 30‰.", "lon": 104.0, "lat": 6.3 },
                 { "year": 2017, "text": "Putrajaya’s low rate reflects its young civil service population.", "lon": 103.6, "lat": 3.2 },
                 { "year": 2018, "text": "Terengganu & Kelantan same rates\n(religious norms sustain early marriages)", "lon": 104.2, "lat": 5.2 },
                 { "year": 2018, "text": "Kedah’s rise began with digital rural marriage registries.", "lon": 102.2, "lat": 6.5 },
-                { "year": 2019, "text": "Perlis stayed steady—many women return home to register marriages locally.", "lon": 102.1, "lat": 6.8 },
+                { "year": 2019, "text": "Perlis stayed steady, which many women return home to register marriages locally.", "lon": 102.1, "lat": 6.8 },
                 { "year": 2019, "text": "Putrajaya’s slow-paced city life\nmeant fewer marriages.", "lon": 103.5, "lat": 3.1 },
-                { "year": 2020, "text": "Kelantan adapted to MCO with digital solemnisation—keeping rates stable.", "lon": 104.0, "lat": 6.2 },
-                { "year": 2020, "text": "Sabah’s rural lockdowns froze marriages—rates plunged sharply.", "lon": 118.7, "lat": 5.8 },
-                { "year": 2021, "text": "Terengganu hit Malaysia’s highest female rate (36.6)—post-MCO surge.", "lon": 104.6, "lat": 5.2 },
+                { "year": 2020, "text": "Kelantan adapted to MCO with digital solemnisation, so the rates stable.", "lon": 104.0, "lat": 6.2 },
+                { "year": 2020, "text": "Lockdowns froze rural marriages sharply.", "lon": 118.7, "lat": 5.8 },
+                { "year": 2021, "text": "Terengganu hit Malaysia’s highest female rate (36.6), because of post-MCO surge.", "lon": 104.6, "lat": 5.2 },
                 { "year": 2021, "text": "Kedah’s rural rebound outpaced industrial states post-pandemic.", "lon": 102.0, "lat": 6.4 },
-                { "year": 2021, "text": "Sabah’s delayed weddings rebounded strongly post-MCO.", "lon": 118.7, "lat": 5.8 },
-                { "year": 2022, "text": "Kelantan stayed above 32‰—traditions continued post-pandemic.", "lon": 104.0, "lat": 6.2 },
-                { "year": 2022, "text": "Sabah’s rebound came from improved rural registration access.", "lon": 118.7, "lat": 5.8 }
+                { "year": 2021, "text": "Post-MCO weddings surged after delays.", "lon": 118.7, "lat": 5.8 },
+                { "year": 2022, "text": "Kelantan stayed above 32‰, which show traditions continued post-pandemic.", "lon": 104.0, "lat": 6.2 },
+                { "year": 2022, "text": "Marriage rebound due to better rural access.", "lon": 118.7, "lat": 5.8 }
               ]
             },
             "transform": [{ "filter": `datum.year == ${selectedYear}` }],
@@ -223,11 +226,22 @@
         ]
       };
 
-      vegaEmbed("#vis", spec, { renderer: "svg", actions: false }).catch(console.error);
+    vegaEmbed("#vis", spec, { renderer: "svg", actions: false, tooltip: { theme: "custom" } })
+    .then(res => {
+        // Apply custom tooltip styling
+        const tooltipEl = document.querySelector('.vg-tooltip');
+        if (tooltipEl) {
+        tooltipEl.style.fontFamily = 'Arial, sans-serif';
+        tooltipEl.style.fontSize = '12px';
+        tooltipEl.style.fontWeight = 'normal';
+        tooltipEl.style.color = '#000';
+        }
+    })
+    .catch(console.error);
     };
 
     const femaleMultiLineChart = (selectedAges = ["< 20"]) => {
-      const spec = {
+    const spec = {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
         "description": "Female Marriage Rate by Age Group (2017–2022)",
         "width": 800,
@@ -235,47 +249,89 @@
         "background": "transparent",
         "data": {"url": FEMALE_CSV, "format": {"type": "csv"}},
         "transform": [
-          {"filter": "datum.sex == 'female' && datum.age != 'all' && datum.year >= 2017 && datum.year <= 2022"},
-          {"filter": `indexof(${JSON.stringify(selectedAges)}, datum.age) >= 0`}
+        {"filter": "datum.sex == 'female' && datum.age != 'all' && datum.year >= 2017 && datum.year <= 2022"},
+        {"filter": `indexof(${JSON.stringify(selectedAges)}, datum.age) >= 0`}
         ],
         "layer": [
-          {
+        // main line
+        {
             "mark": {"type": "line", "interpolate": "monotone", "strokeWidth": 3},
             "encoding": {
-              "x": {"field": "year", "type": "ordinal", "title": "Year"},
-              "y": {"field": "rate", "type": "quantitative", "title": "Marriage Rate (per 1,000 females)"},
-              "color": {
+            "x": {"field": "year", "type": "ordinal", "title": "Year"},
+            "y": {"field": "rate", "type": "quantitative", "title": "Marriage Rate (per 1,000 females)"},
+            "color": {
                 "field": "age",
                 "type": "nominal",
                 "sort": allAges,
                 "scale": {"scheme": "category10"},
                 "title": "Age Group"
-              },
-              "tooltip": [
+            }
+            }
+        },
+
+        // visible points
+        {
+            "mark": {"type": "point", "size": 60, "filled": true, "opacity": 1},
+            "encoding": {
+            "x": {"field": "year", "type": "ordinal"},
+            "y": {"field": "rate", "type": "quantitative"},
+            "color": {"field": "age", "type": "nominal"},
+            "tooltip": [
                 {"field": "age", "title": "Age Group"},
                 {"field": "year", "title": "Year"},
                 {"field": "rate", "title": "Marriage Rate"}
-              ]
+            ]
             }
-          },
-          {
-            "mark": {"type": "point", "size": 60, "filled": true, "opacity": 1},
+        },
+
+        // transparent points for easier hover hitbox
+        {
+            "mark": {"type": "point", "size": 200, "opacity": 0}, // invisible hover area
             "encoding": {
-              "x": {"field": "year", "type": "ordinal"},
-              "y": {"field": "rate", "type": "quantitative"},
-              "color": {"field": "age", "type": "nominal"}
+            "x": {"field": "year", "type": "ordinal"},
+            "y": {"field": "rate", "type": "quantitative"},
+            "color": {"field": "age", "type": "nominal"},
+            "tooltip": [
+                {"field": "age", "title": "Age Group"},
+                {"field": "year", "title": "Year"},
+                {"field": "rate", "title": "Marriage Rate"}
+            ]
             }
-          }
+        }
         ],
         "config": {
-          "font": "Arial",
-          "axis": {"labelFont": "Arial", "labelFontSize": 12, "titleFont": "Arial", "titleFontSize": 13, "titleFontWeight": "bold"},
-          "legend": {"labelFont": "Arial", "labelFontSize": 12, "titleFont": "Arial", "titleFontSize": 13, "titleFontWeight": "bold"},
-          "view": {"stroke": "transparent"}
+        "font": "Arial",
+        "tooltip": {"font": "Arial", "fontSize": 12},
+        "axis": {
+            "labelFont": "Arial",
+            "labelFontSize": 12,
+            "titleFont": "Arial",
+            "titleFontSize": 13,
+            "titleFontWeight": "bold"
+        },
+        "legend": {
+            "labelFont": "Arial",
+            "labelFontSize": 12,
+            "titleFont": "Arial",
+            "titleFontSize": 13,
+            "titleFontWeight": "bold"
+        },
+        "view": {"stroke": "transparent"}
         }
-      };
-      vegaEmbed("#femaleMultiLineChart", spec, { renderer: "svg", actions: false }).catch(console.error);
     };
+    vegaEmbed("#femaleMultiLineChart", spec, { renderer: "svg", actions: false, tooltip: { theme: "custom" } })
+    .then(res => {
+        const tooltipEl = document.querySelector('.vg-tooltip');
+        if (tooltipEl) {
+        tooltipEl.style.fontFamily = 'Arial, sans-serif';
+        tooltipEl.style.fontSize = '12px';
+        tooltipEl.style.fontWeight = 'normal';
+        tooltipEl.style.color = '#000';
+        }
+    })
+    .catch(console.error);
+    };
+
 
     const checkboxGroup = document.getElementById("ageCheckboxGroup");
     allAges.forEach(age => {
@@ -308,6 +364,18 @@
         femaleMultiLineChart(selectedAges);
       });
     });
+
+    //Apply Arial font to Vega tooltips dynamically
+    const observer = new MutationObserver(() => {
+    document.querySelectorAll('.vg-tooltip').forEach(el => {
+        el.style.fontFamily = 'Arial, sans-serif';
+        el.style.fontSize = '12px';
+        el.style.fontWeight = 'normal';
+        el.style.color = '#000';
+    });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
   </script>
 </body>
 </html>
